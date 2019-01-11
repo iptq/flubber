@@ -35,7 +35,7 @@ fn main() {
             println!("First run, writing config file.");
             let contents = toml::to_string_pretty(&config).unwrap();
             fs::write(path, contents.as_bytes()).unwrap();
-            config
+            panic!("Please modify the config file and run the server again.");
         }
     };
 

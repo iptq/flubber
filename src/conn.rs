@@ -1,5 +1,7 @@
+use std::io::{self, Read, Write};
+
 use futures::{Poll, Stream};
-use tokio::net::{TcpListener, TcpStream, UnixListener, UnixStream};
+use tokio::{net::{TcpListener, TcpStream, UnixListener, UnixStream}, io::{AsyncRead, AsyncWrite}};
 
 use crate::errors::Error;
 
@@ -43,4 +45,40 @@ impl Stream for Incoming {
 pub enum ConnStream {
     Unix(UnixStream),
     Tcp(TcpStream),
+}
+
+impl Read for ConnStream {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
+        match self {
+            ConnStream::Unix(stream) => stream.read(buf),
+            ConnStream::Tcp(stream) => stream.read(buf),
+        }
+    }
+}
+
+impl Write for ConnStream {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
+        match self {
+            ConnStream::Unix(stream) => stream.write(buf),
+            ConnStream::Tcp(stream) => stream.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> Result<(), io::Error> {
+        match self {
+            ConnStream::Unix(stream) => stream.flush(),
+            ConnStream::Tcp(stream) => stream.flush(),
+        }
+    }
+}
+
+impl AsyncRead for ConnStream {}
+
+impl AsyncWrite for ConnStream {
+    fn shutdown(&mut self) -> Poll<(), io::Error> {
+        match self {
+            ConnStream::Unix(stream) => stream.shutdown(),
+            ConnStream::Tcp(stream) => stream.shutdown(),
+        }
+    }
 }

@@ -20,12 +20,14 @@ use futures::{
     future::{self, FutureResult},
     Future, Stream,
 };
-use tokio::net::{TcpListener, UnixListener};
+use tokio::{net::{TcpListener, UnixListener}, io::AsyncRead};
+use tokio_codec::Decoder;
 
 pub use crate::buffer::Buffer;
 pub use crate::config::Config;
 pub use crate::errors::Error;
 pub use crate::plugin::Plugin;
+pub use crate::proto::ClientCodec;
 
 pub struct Flubber {
     config: Config,
@@ -49,11 +51,13 @@ impl Flubber {
                     UnixListener::bind(path).map(|listener| Connection::Unix(listener))
                 }
                 ConnectionConfig::Tcp { ref addr } => {
+                    // TODO: implement TLS
                     TcpListener::bind(addr).map(|listener| Connection::Tcp(listener))
                 }
             };
             let conn = conn.unwrap();
             conn.incoming().for_each(|socket| {
+                let framed = socket.framed(ClientCodec);
                 println!("Connected!");
                 future::ok(())
             })
