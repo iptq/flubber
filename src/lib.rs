@@ -9,11 +9,18 @@ extern crate tokio_codec;
 
 mod buffer;
 mod config;
+mod conn;
 mod errors;
 mod plugin;
 mod proto;
 
-use futures::{future, Future};
+use crate::config::ConnectionConfig;
+use crate::conn::Connection;
+use futures::{
+    future::{self, FutureResult},
+    Future, Stream,
+};
+use tokio::net::{TcpListener, UnixListener};
 
 pub use crate::buffer::Buffer;
 pub use crate::config::Config;
@@ -34,7 +41,26 @@ impl Flubber {
             plugins: Vec::new(),
         }
     }
-    pub fn as_future(&self) -> impl Future<Item = (), Error = Error> {
-        future::ok(())
+
+    pub fn run(&self) -> impl Future<Item = (), Error = Error> {
+        let client_connection = {
+            let conn = match self.config.client_connection {
+                ConnectionConfig::Unix { ref path } => {
+                    UnixListener::bind(path).map(|listener| Connection::Unix(listener))
+                }
+                ConnectionConfig::Tcp { ref addr } => {
+                    TcpListener::bind(addr).map(|listener| Connection::Tcp(listener))
+                }
+            };
+            let conn = conn.unwrap();
+            conn.incoming().for_each(|socket| {
+                println!("Connected!");
+                future::ok(())
+            })
+        };
+
+        let plugin_connection: FutureResult<_, Error> = future::ok(());
+
+        client_connection.join(plugin_connection).map(|_| ())
     }
 }

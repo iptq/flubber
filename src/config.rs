@@ -1,14 +1,16 @@
-use dirs;
+use std::net::SocketAddr;
 use std::path::PathBuf;
+
+use dirs;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ConnectionConfig {
     #[serde(rename = "unix")]
-    UnixSocket { path: PathBuf },
+    Unix { path: PathBuf },
 
     #[serde(rename = "tcp")]
-    Tcp { addr: String, port: u16 },
+    Tcp { addr: SocketAddr },
     // TODO: fifo?
 }
 
@@ -16,11 +18,11 @@ impl Default for ConnectionConfig {
     fn default() -> ConnectionConfig {
         let home = dirs::home_dir().unwrap();
         let path = home.join(".flubber.socket");
-        ConnectionConfig::UnixSocket { path }
+        ConnectionConfig::Unix { path }
     }
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
-    client_connection: ConnectionConfig,
+    pub client_connection: ConnectionConfig,
 }

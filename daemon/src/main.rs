@@ -40,7 +40,7 @@ fn main() {
     };
 
     let flubber = Flubber::from_config(config);
-    tokio::run(flubber.as_future().map_err(|err| {
+    tokio::run(flubber.run().map_err(|err| {
         eprintln!("Failed with error: {}", err);
         ()
     }));
