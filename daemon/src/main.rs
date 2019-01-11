@@ -24,7 +24,10 @@ fn main() {
     let config = match config_file {
         Some(path) => {
             let contents = fs::read(path).unwrap();
-            toml::from_slice::<Config>(&contents).unwrap()
+            match toml::from_slice::<Config>(&contents) {
+                Ok(config) => config,
+                Err(err) => panic!("Error while reading config file: {}", err),
+            }
         }
         None => {
             let path = base_dir.place_config_file("flubber.conf").unwrap();
