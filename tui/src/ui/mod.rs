@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use flubber::{ClientMessage, Error};
-use futures::sync::mpsc;
+use futures::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use termion::{
     self, color, cursor,
     event::{Event, Key},
@@ -12,12 +12,17 @@ use termion::{
 };
 
 pub struct GUI {
+    from_thread: UnboundedReceiver<ClientMessage>,
+    to_thread: UnboundedSender<ClientMessage>,
     terminal: MouseTerminal<AlternateScreen<RawTerminal<io::Stdout>>>,
     done: bool,
 }
 
 impl GUI {
-    pub fn new(_: mpsc::UnboundedSender<ClientMessage>) -> GUI {
+    pub fn new(
+        from_thread: UnboundedReceiver<ClientMessage>,
+        to_thread: UnboundedSender<ClientMessage>,
+    ) -> GUI {
         let stdout = io::stdout();
         let raw_stdout = stdout.into_raw_mode().unwrap();
 
@@ -25,6 +30,8 @@ impl GUI {
         let terminal = MouseTerminal::from(alt_screen);
 
         GUI {
+            from_thread,
+            to_thread,
             terminal,
             done: false,
         }

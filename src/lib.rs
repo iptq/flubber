@@ -60,17 +60,24 @@ impl Flubber {
             let conn = conn.unwrap();
             conn.incoming()
                 .map_err(|err| {
-                    eprintln!("Client connection error");
+                    eprintln!("client connection error: {}", err);
                 })
                 .for_each(|socket| {
                     let (stream, sink) = socket.split();
 
                     let framed = FramedRead::new(stream, ClientCodec);
-                    println!("Connected!");
-                    framed.for_each(|_| future::ok(())).or_else(|err| {
-                        eprintln!("Client error: {}", err);
-                        future::ok(())
-                    })
+                    println!("connected!");
+                    framed
+                        .for_each(|message| {
+                            println!("received message {:?}", message);
+                            future::ok(())
+                        })
+                        // using or_else so an error in a single client doesn't
+                        // kill the entire server's stream
+                        .or_else(|err| {
+                            eprintln!("client error: {}", err);
+                            future::ok(())
+                        })
                 })
         };
 

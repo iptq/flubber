@@ -1,9 +1,9 @@
 extern crate flubber;
 extern crate futures;
-#[macro_use]
 extern crate structopt;
 extern crate termion;
 extern crate tokio;
+extern crate tokio_codec;
 
 mod client;
 mod ui;
@@ -42,10 +42,12 @@ pub struct Opt {
 fn main() {
     let args = Opt::from_args();
 
-    let (tx, rx) = mpsc::unbounded();
-    let mut gui = GUI::new(tx);
+    let (from_ui, to_ui) = mpsc::unbounded();
+    let (from_thread, to_thread) = mpsc::unbounded();
 
-    thread::spawn(move || client::run(args.clone()));
+    let mut gui = GUI::new(to_thread, from_ui);
+
+    thread::spawn(move || client::run(args.clone(), to_ui, from_thread));
     match gui.run() {
         Ok(_) => (),
         Err(err) => {

@@ -3,7 +3,7 @@ use bytes::BytesMut;
 use serde_cbor;
 use tokio_codec::{Decoder, Encoder};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ClientMessage {
     #[serde(rename = "auth")]
