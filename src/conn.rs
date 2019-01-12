@@ -1,6 +1,6 @@
 use std::io::{self, Read, Write};
 
-use futures::{Poll, Stream};
+use futures::{Future, Poll, Stream};
 use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::{TcpListener, TcpStream, UnixListener, UnixStream},
@@ -8,16 +8,16 @@ use tokio::{
 
 use crate::errors::Error;
 
-pub enum Connection {
+pub enum Listener {
     Unix(UnixListener),
     Tcp(TcpListener),
 }
 
-impl Connection {
+impl Listener {
     pub fn incoming(self) -> Incoming {
         match self {
-            Connection::Unix(listener) => Incoming::Unix(listener.incoming()),
-            Connection::Tcp(listener) => Incoming::Tcp(listener.incoming()),
+            Listener::Unix(listener) => Incoming::Unix(listener.incoming()),
+            Listener::Tcp(listener) => Incoming::Tcp(listener.incoming()),
         }
     }
 }
@@ -40,6 +40,29 @@ impl Stream for Incoming {
             Incoming::Tcp(incoming) => incoming
                 .poll()
                 .map(|asyn| asyn.map(|opt| opt.map(|item| ConnStream::Tcp(item))))
+                .map_err(|err| err.into()),
+        }
+    }
+}
+
+pub enum ConnFuture {
+    Unix(::tokio::net::unix::ConnectFuture),
+    Tcp(::tokio::net::tcp::ConnectFuture),
+}
+
+impl Future for ConnFuture {
+    type Item = ConnStream;
+    type Error = Error;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        match self {
+            ConnFuture::Unix(future) => future
+                .poll()
+                .map(|asyn| asyn.map(|stream| ConnStream::Unix(stream)))
+                .map_err(|err| err.into()),
+            ConnFuture::Tcp(future) => future
+                .poll()
+                .map(|asyn| asyn.map(|stream| ConnStream::Tcp(stream)))
                 .map_err(|err| err.into()),
         }
     }

@@ -1,5 +1,3 @@
-mod util;
-
 use std::io::{self, Write};
 
 use flubber::{ClientMessage, Error};
@@ -15,6 +13,7 @@ use termion::{
 
 pub struct GUI {
     terminal: MouseTerminal<AlternateScreen<RawTerminal<io::Stdout>>>,
+    done: bool,
 }
 
 impl GUI {
@@ -25,19 +24,28 @@ impl GUI {
         let alt_screen = AlternateScreen::from(raw_stdout);
         let terminal = MouseTerminal::from(alt_screen);
 
-        GUI { terminal }
+        GUI {
+            terminal,
+            done: false,
+        }
     }
 
-    fn update(&self, _event: Event) {}
+    fn update(&mut self, event: Event) {
+        // println!("evt: {:?}", event);
+        match event {
+            Event::Key(Key::Esc) => self.done = true,
+            _ => (),
+        }
+    }
 
     fn draw(&mut self, rows: u16, cols: u16) -> Result<(), Error> {
         // draw the buffer list
         // TODO: determine width of buffer list
         let buflist_width = 10;
 
-        write!(self.terminal, "{}", cursor::Goto(1, 1))?;
+        write!(self.terminal, "{}{}", cursor::Goto(1, 1), cursor::Hide)?;
         for row in 0..rows {
-            write!(self.terminal, "{}", style::Reset);
+            write!(self.terminal, "{}", style::Reset)?;
             for col in 0..cols {
                 if col == buflist_width + 1 {
                     write!(
@@ -50,10 +58,14 @@ impl GUI {
                 } else if row == 0 && col > buflist_width + 1 {
                     write!(self.terminal, "{} ", color::Bg(color::Green))?;
                 } else {
-                    write!(self.terminal, " ");
+                    write!(self.terminal, " ")?;
                 }
             }
         }
+
+        // move the cursor to the correct location
+        write!(self.terminal, "{}", cursor::Goto(1, 1))?;
+
         Ok(())
     }
 
@@ -70,15 +82,17 @@ impl GUI {
 
             // update
             let event = event.unwrap();
-            // println!("evt: {:?}", event);
-            match event {
-                Event::Key(Key::Ctrl('c')) => break,
-                _ => (),
-            }
+            self.update(event);
 
             self.draw(rows, cols)?;
-            self.terminal.flush().unwrap();
+            self.terminal.flush()?;
+
+            if self.done {
+                break;
+            }
         }
+
+        write!(self.terminal, "{}", cursor::Show)?;
         Ok(())
     }
 }

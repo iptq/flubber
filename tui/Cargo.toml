@@ -7,4 +7,6 @@ edition = "2018"
 [dependencies]
 flubber = { path = "../" }
 futures = "0.1"
+structopt = "0.2"
 termion = "1.5"
+tokio = "0.1"
