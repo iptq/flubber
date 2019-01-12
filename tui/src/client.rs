@@ -1,7 +1,13 @@
 use crate::Opt;
-use flubber::{conn::{ConnFuture, ConnStream},ClientCodec};
+use flubber::{
+    conn::{ConnFuture, ConnStream},
+    ClientCodec,
+};
 use futures::Future;
-use tokio::{net::{TcpStream, UnixStream}, io::AsyncRead};
+use tokio::{
+    io::AsyncRead,
+    net::{TcpStream, UnixStream},
+};
 
 pub fn run(args: Opt) {
     // establish a connection
@@ -12,10 +18,13 @@ pub fn run(args: Opt) {
         (None, None) => panic!("No connection method specified. Use either --unix or --tcp"),
     };
 
-    tokio::run(conn.map(|socket| {
-        let (stream, sink) = socket.split();
-    }).map_err(|err| {
-        eprintln!("Error: {}", err);
-        ()
-    }));
+    tokio::run(
+        conn.map(|socket| {
+            let (stream, sink) = socket.split();
+        })
+        .map_err(|err| {
+            eprintln!("Error: {}", err);
+            ()
+        }),
+    );
 }

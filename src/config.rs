@@ -1,8 +1,6 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use dirs;
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ConnectionConfig {
@@ -17,9 +15,9 @@ pub enum ConnectionConfig {
 
 impl Default for ConnectionConfig {
     fn default() -> ConnectionConfig {
-        let home = dirs::home_dir().unwrap();
-        let path = home.join(".flubber.socket");
-        ConnectionConfig::Unix { path }
+        ConnectionConfig::Tcp {
+            addr: "127.0.0.1:5060".parse().unwrap(),
+        }
     }
 }
 

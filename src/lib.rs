@@ -1,5 +1,4 @@
 extern crate bytes;
-extern crate dirs;
 extern crate futures;
 extern crate serde;
 #[macro_use]
@@ -47,7 +46,7 @@ impl Flubber {
         }
     }
 
-    pub fn run(&self) -> impl Future<Item = (), Error = Error> {
+    pub fn run(&self) -> impl Future<Item = (), Error = ()> {
         let client_connection = {
             let conn = match self.config.client_connection {
                 ConnectionConfig::Unix { ref path } => {
@@ -59,16 +58,23 @@ impl Flubber {
                 }
             };
             let conn = conn.unwrap();
-            conn.incoming().for_each(|socket| {
-                let (stream, sink) = socket.split();
+            conn.incoming()
+                .map_err(|err| {
+                    eprintln!("Client connection error");
+                })
+                .for_each(|socket| {
+                    let (stream, sink) = socket.split();
 
-                let framed = FramedRead::new(stream, ClientCodec);
-                println!("Connected!");
-                framed.for_each(|_| future::ok(()))
-            })
+                    let framed = FramedRead::new(stream, ClientCodec);
+                    println!("Connected!");
+                    framed.for_each(|_| future::ok(())).or_else(|err| {
+                        eprintln!("Client error: {}", err);
+                        future::ok(())
+                    })
+                })
         };
 
-        let plugin_connection: FutureResult<_, Error> = future::ok(());
+        let plugin_connection: FutureResult<_, ()> = future::ok(());
 
         client_connection.join(plugin_connection).map(|_| ())
     }
