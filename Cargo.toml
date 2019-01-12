@@ -9,6 +9,7 @@ members = ["daemon", "tui"]
 
 [dependencies]
 bytes = "0.4"
+chrono = "0.4"
 futures = "0.1"
 serde = "1.0"
 serde_cbor = "0.9"

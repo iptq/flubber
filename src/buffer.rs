@@ -1,12 +1,16 @@
 use std::cmp;
 use std::collections::HashMap;
 
+use chrono::{offset::Utc, DateTime};
 use uuid::Uuid;
 
 type BufferList = HashMap<Uuid, Buffer>;
 
-#[derive(Default)]
-pub struct Message {}
+pub struct Message {
+    timestamp: DateTime<Utc>,
+    author: String,
+    contents: String,
+}
 
 pub struct Buffer {
     title: String,

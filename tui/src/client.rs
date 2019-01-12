@@ -1,5 +1,5 @@
 use crate::Opt;
-use flubber::{conn::ConnFuture, ClientCodec, ClientMessage};
+use flubber::{conn::ConnFuture, ClientCodec, ClientMessage, Error};
 use futures::{
     future,
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
@@ -15,7 +15,7 @@ pub fn run(
     args: Opt,
     from_ui: UnboundedReceiver<ClientMessage>,
     to_ui: UnboundedSender<ClientMessage>,
-) {
+) -> impl Future<Item = (), Error = Error> {
     // establish a connection
     let conn = match (&args.connection.unix, &args.connection.tcp) {
         (Some(_), Some(_)) => panic!("Only one of --unix or --tcp should be used."),
@@ -24,29 +24,23 @@ pub fn run(
         (None, None) => panic!("No connection method specified. Use either --unix or --tcp"),
     };
 
-    tokio::run(
-        conn.map(|socket| {
-            let (stream, sink) = socket.split();
+    conn.map(|socket| {
+        let (stream, sink) = socket.split();
 
-            let framed_read = FramedRead::new(stream, ClientCodec);
-            let reader = framed_read.for_each(|message| future::ok(())).map(|_| ());
+        let framed_read = FramedRead::new(stream, ClientCodec);
+        let reader = framed_read.for_each(|message| future::ok(())).map(|_| ());
 
-            // write the auth message
-            let framed_write = FramedWrite::new(sink, ClientCodec);
-            let auth = ClientMessage::Auth { password: None };
-            let writer = framed_write.send(auth).and_then(|stream| {
-                from_ui
-                    .map_err(|_| unreachable!())
-                    .fold(stream, |w, message| w.send(message))
-                    .map(|_| ())
-            });
+        // write the auth message
+        let framed_write = FramedWrite::new(sink, ClientCodec);
+        let auth = ClientMessage::Auth { password: None };
+        let writer = framed_write.send(auth).and_then(|stream| {
+            from_ui
+                .map_err(|_| unreachable!())
+                .fold(stream, |w, message| w.send(message))
+                .map(|_| ())
+        });
 
-            reader.select(writer).map_err(|_| ())
-        })
-        .map(|_| ())
-        .map_err(|err| {
-            eprintln!("Error: {}", err);
-            ()
-        }),
-    );
+        reader.select(writer).map_err(|_| ())
+    })
+    .map(|_| ())
 }

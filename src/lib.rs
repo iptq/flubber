@@ -1,4 +1,5 @@
 extern crate bytes;
+extern crate chrono;
 extern crate futures;
 extern crate serde;
 #[macro_use]

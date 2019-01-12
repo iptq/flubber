@@ -11,11 +11,11 @@ mod ui;
 
 use std::net::SocketAddr;
 use std::process;
-use std::thread;
 
 use crate::ui::GUI;
-use futures::sync::mpsc;
+use futures::{sync::{mpsc, oneshot}, Future};
 use structopt::StructOpt;
+use tokio::runtime::Runtime;
 
 #[derive(Clone, Debug, StructOpt)]
 struct ConnectionConfig {
@@ -42,18 +42,29 @@ pub struct Opt {
 
 fn main() {
     let args = Opt::from_args();
+    let (stop_send, stop_recv) = oneshot::channel();
 
     let (from_ui, to_ui) = mpsc::unbounded();
     let (from_thread, to_thread) = mpsc::unbounded();
 
-    let mut gui = GUI::new(to_thread, from_ui);
+    let mut gui = GUI::new(to_thread, from_ui, stop_send);
 
-    thread::spawn(move || client::run(args.clone(), to_ui, from_thread));
-    match gui.run() {
-        Ok(_) => (),
-        Err(err) => {
-            eprintln!("Unexpected error: {}", err);
-            process::exit(123);
-        }
-    }
+    // thread::spawn(move || client::run(args.clone(), to_ui, from_thread));
+    // match gui.run() {
+    //     Ok(_) => (),
+    //     Err(err) => {
+    //         eprintln!("Unexpected error: {}", err);
+    //         process::exit(123);
+    //     }
+    // }
+
+    let mut runtime = Runtime::new().unwrap();
+    runtime.spawn(client::run(args.clone(), to_ui, from_thread).map_err(|err| {
+        eprintln!("client error: {}", err);
+    }));
+    runtime.spawn(gui.run().map_err(|err| {
+        eprintln!("gui error: {}", err);
+    }));
+    runtime.block_on(stop_recv);
+    runtime.shutdown_now();
 }
