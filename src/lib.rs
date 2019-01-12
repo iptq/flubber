@@ -20,14 +20,17 @@ use futures::{
     future::{self, FutureResult},
     Future, Stream,
 };
-use tokio::{net::{TcpListener, UnixListener}, io::AsyncRead};
+use tokio::{
+    io::AsyncRead,
+    net::{TcpListener, UnixListener},
+};
 use tokio_codec::Decoder;
 
 pub use crate::buffer::Buffer;
 pub use crate::config::Config;
 pub use crate::errors::Error;
 pub use crate::plugin::Plugin;
-pub use crate::proto::ClientCodec;
+pub use crate::proto::*;
 
 pub struct Flubber {
     config: Config,

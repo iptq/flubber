@@ -1,7 +1,10 @@
 use std::io::{self, Read, Write};
 
 use futures::{Poll, Stream};
-use tokio::{net::{TcpListener, TcpStream, UnixListener, UnixStream}, io::{AsyncRead, AsyncWrite}};
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::{TcpListener, TcpStream, UnixListener, UnixStream},
+};
 
 use crate::errors::Error;
 

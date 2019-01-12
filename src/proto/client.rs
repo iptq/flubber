@@ -4,8 +4,13 @@ use serde_cbor;
 use tokio_codec::{Decoder, Encoder};
 
 #[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum ClientMessage {
-    Init { password: Option<String> },
+    #[serde(rename = "auth")]
+    Auth { password: Option<String> },
+
+    #[serde(rename = "get_buffers")]
+    GetBuffers,
 }
 
 pub struct ClientCodec;

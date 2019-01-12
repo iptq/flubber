@@ -12,7 +12,6 @@ pub enum ConnectionConfig {
 
     #[serde(rename = "tcp")]
     Tcp { addr: SocketAddr },
-
     // TODO: fifo?
 }
 
