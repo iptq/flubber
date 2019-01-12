@@ -6,7 +6,7 @@ use std::fmt;
 pub enum Error {
     Io(::std::io::Error),
     Cbor(::serde_cbor::error::Error),
-    ClientSend(::futures::sync::mpsc::SendError<ClientMessage>)
+    ClientSend(::futures::sync::mpsc::SendError<ClientMessage>),
 }
 
 impl fmt::Display for Error {

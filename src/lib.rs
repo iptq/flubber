@@ -31,6 +31,8 @@ pub use crate::errors::Error;
 pub use crate::plugin::Plugin;
 pub use crate::proto::*;
 
+pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 pub struct Flubber {
     config: Config,
     plugins: Vec<Plugin>,

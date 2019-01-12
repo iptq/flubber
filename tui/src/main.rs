@@ -4,6 +4,7 @@ extern crate structopt;
 extern crate termion;
 extern crate tokio;
 extern crate tokio_codec;
+extern crate uuid;
 
 mod client;
 mod ui;

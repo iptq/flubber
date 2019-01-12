@@ -1,7 +1,15 @@
+mod buffer;
+mod input;
+
+use std::collections::HashMap;
 use std::io::{self, Write};
 
 use flubber::{ClientMessage, Error};
-use futures::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use futures::{
+    future, stream,
+    sync::mpsc::{UnboundedReceiver, UnboundedSender},
+    Stream,
+};
 use termion::{
     self, color, cursor,
     event::{Event, Key},
@@ -10,8 +18,14 @@ use termion::{
     screen::AlternateScreen,
     style,
 };
+use uuid::Uuid;
+
+use self::buffer::{Buffer, Message};
 
 pub struct GUI {
+    buffer_list: HashMap<Uuid, Buffer>,
+    active_buffer: Option<Uuid>,
+
     from_thread: UnboundedReceiver<ClientMessage>,
     to_thread: UnboundedSender<ClientMessage>,
     terminal: MouseTerminal<AlternateScreen<RawTerminal<io::Stdout>>>,
@@ -30,6 +44,9 @@ impl GUI {
         let terminal = MouseTerminal::from(alt_screen);
 
         GUI {
+            buffer_list: HashMap::new(),
+            active_buffer: None,
+
             from_thread,
             to_thread,
             terminal,
@@ -49,6 +66,11 @@ impl GUI {
         // draw the buffer list
         // TODO: determine width of buffer list
         let buflist_width = 10;
+        let names_width = 10;
+
+        // number of available rows for messages
+        let available_rows = rows - 3;
+        let available_cols = cols - (buflist_width + 1);
 
         write!(self.terminal, "{}{}", cursor::Goto(1, 1), cursor::Hide)?;
         for row in 0..rows {
@@ -62,7 +84,7 @@ impl GUI {
                         style::Reset
                     )?;
                     continue;
-                } else if row == 0 && col > buflist_width + 1 {
+                } else if (row == 0 || row == rows - 2) && col > buflist_width + 1 {
                     write!(self.terminal, "{} ", color::Bg(color::Green))?;
                 } else {
                     write!(self.terminal, " ")?;
@@ -71,7 +93,12 @@ impl GUI {
         }
 
         // move the cursor to the correct location
-        write!(self.terminal, "{}", cursor::Goto(1, 1))?;
+        write!(
+            self.terminal,
+            "{}{}",
+            cursor::Goto(buflist_width + 3, rows),
+            cursor::Show
+        )?;
 
         Ok(())
     }
@@ -79,16 +106,16 @@ impl GUI {
     pub fn run(&mut self) -> Result<(), Error> {
         let stdin = io::stdin();
 
-        let (cols, rows) = termion::terminal_size().unwrap();
+        let (cols, rows) = termion::terminal_size()?;
         self.draw(rows, cols)?;
         self.terminal.flush().unwrap();
 
         for event in stdin.events() {
             // terminal size
-            let (cols, rows) = termion::terminal_size().unwrap();
+            let (cols, rows) = termion::terminal_size()?;
 
             // update
-            let event = event.unwrap();
+            let event = event?;
             self.update(event);
 
             self.draw(rows, cols)?;
@@ -98,8 +125,12 @@ impl GUI {
                 break;
             }
         }
-
-        write!(self.terminal, "{}", cursor::Show)?;
         Ok(())
+    }
+}
+
+impl Drop for GUI {
+    fn drop(&mut self) {
+        write!(self.terminal, "{}{}", style::Reset, cursor::Show).unwrap();
     }
 }

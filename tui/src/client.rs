@@ -29,15 +29,14 @@ pub fn run(
             let (stream, sink) = socket.split();
 
             let framed_read = FramedRead::new(stream, ClientCodec);
-            let reader = framed_read
-                .for_each(|message| future::ok(()))
-                .map(|_| ());
+            let reader = framed_read.for_each(|message| future::ok(())).map(|_| ());
 
             // write the auth message
             let framed_write = FramedWrite::new(sink, ClientCodec);
             let auth = ClientMessage::Auth { password: None };
             let writer = framed_write.send(auth).and_then(|stream| {
-                from_ui.map_err(|_| unreachable!())
+                from_ui
+                    .map_err(|_| unreachable!())
                     .fold(stream, |w, message| w.send(message))
                     .map(|_| ())
             });
