@@ -10,10 +10,12 @@ mod client;
 mod ui;
 
 use std::net::SocketAddr;
-use std::process;
 
 use crate::ui::GUI;
-use futures::{sync::{mpsc, oneshot}, Future};
+use futures::{
+    sync::{mpsc, oneshot},
+    Future,
+};
 use structopt::StructOpt;
 use tokio::runtime::Runtime;
 
@@ -49,22 +51,17 @@ fn main() {
 
     let mut gui = GUI::new(to_thread, from_ui, stop_send);
 
-    // thread::spawn(move || client::run(args.clone(), to_ui, from_thread));
-    // match gui.run() {
-    //     Ok(_) => (),
-    //     Err(err) => {
-    //         eprintln!("Unexpected error: {}", err);
-    //         process::exit(123);
-    //     }
-    // }
-
     let mut runtime = Runtime::new().unwrap();
-    runtime.spawn(client::run(args.clone(), to_ui, from_thread).map_err(|err| {
-        eprintln!("client error: {}", err);
-    }));
-    runtime.spawn(gui.run().map_err(|err| {
-        eprintln!("gui error: {}", err);
-    }));
-    runtime.block_on(stop_recv);
-    runtime.shutdown_now();
+    runtime.spawn(
+        client::run(args.clone(), to_ui, from_thread)
+            .join(gui.run())
+            .map(|_| ())
+            .map_err(|err| {
+                eprintln!("error: {}", err);
+            }),
+    );
+    runtime.block_on(stop_recv).unwrap();
+
+    println!("done.");
+    gui.restore();
 }
