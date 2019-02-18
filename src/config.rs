@@ -27,6 +27,9 @@ pub struct Config {
     // TODO: check that it's not empty
     pub client_password: String,
 
+    /// Connection information about the plugin-facing side.
+    pub plugin_connection: ConnectionConfig,
+
     /// Connection information about the client-facing side.
     pub client_connection: ConnectionConfig,
 }
