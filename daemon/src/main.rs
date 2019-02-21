@@ -39,6 +39,6 @@ fn main() {
         }
     };
 
-    let flubber = Flubber::from_config(config);
+    let mut flubber = Flubber::from_config(config);
     tokio::run(flubber.run());
 }

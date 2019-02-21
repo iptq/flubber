@@ -1,9 +1,0 @@
-[package]
-name = "gui"
-version = "0.1.0"
-authors = ["Michael Zhang <iptq@protonmail.com>"]
-
-[dependencies]
-gtk = "0.5"
-relm = "0.15"
-relm-derive = "0.15"

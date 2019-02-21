@@ -37,17 +37,14 @@ impl Default for Buffer {
 }
 
 impl Buffer {
+    pub fn root_buffer() -> Buffer {
+        Buffer::default()
+    }
+
     pub fn root(&self, buflist: &BufferList) -> Uuid {
         match self.parent {
             Some(parent) => buflist.get(&parent).unwrap().root(buflist),
             None => self.id,
         }
     }
-
-    // pub fn max_width(&self, indent: u32, buflist: &BufferList) -> u32 {
-    //     self.children.iter().fold(0, |acc, buf| {
-    //         let max_width = buflist.get(&buf).unwrap().max_width(indent, buflist);
-    //         cmp::max(acc, indent + max_width)
-    //     })
-    // }
 }

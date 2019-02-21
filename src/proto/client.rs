@@ -1,7 +1,8 @@
-use crate::Error;
 use bytes::BytesMut;
 use serde_cbor;
 use tokio_codec::{Decoder, Encoder};
+
+use crate::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]

@@ -1,12 +1,5 @@
-extern crate bytes;
-extern crate chrono;
-extern crate futures;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate tokio;
-extern crate tokio_codec;
-extern crate uuid;
 
 mod buffer;
 mod config;
@@ -20,6 +13,7 @@ use futures::{
     future::{self, FutureResult},
     Future, Stream,
 };
+use radix_trie::Trie;
 use tokio::{
     io::AsyncRead,
     net::{TcpListener, UnixListener},
@@ -37,7 +31,7 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub struct Flubber {
     config: Config,
     plugins: Vec<Plugin>,
-    root_buffer: Buffer,
+    buffers: Trie<String, Buffer>,
 }
 
 impl Flubber {
@@ -45,11 +39,14 @@ impl Flubber {
         Flubber {
             config,
             plugins: Vec::new(),
-            root_buffer: Buffer::default(),
+            buffers: Trie::new(),
         }
     }
 
-    pub fn run(&self) -> impl Future<Item = (), Error = ()> {
+    pub fn run(&mut self) -> impl Future<Item = (), Error = ()> {
+        self.buffers
+            .insert(String::from("flubber"), Buffer::root_buffer());
+
         let client_connection = {
             let conn = match self.config.client_connection {
                 ConnectionConfig::Unix { ref path } => {

@@ -2,17 +2,21 @@
 name = "flubber"
 version = "0.1.0"
 authors = ["Michael Zhang <iptq@protonmail.com>"]
+edition = "2018"
 
 [workspace]
-members = ["daemon", "tui", "gui"]
+members = ["daemon", "tui"]
 
 [dependencies]
 bytes = "0.4"
 chrono = "0.4"
 futures = "0.1"
+radix_trie = "0.1"
 serde = "1.0"
 serde_cbor = "0.9"
 serde_derive = "1.0"
 tokio = "0.1"
+tokio-io = "0.1"
 tokio-codec = "0.1"
+tokio-process = "0.2"
 uuid = { version = "0.7", features = ["v4"] }

@@ -21,6 +21,9 @@ impl Default for ConnectionConfig {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PluginConfig {}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
     /// Password to authenticate with (must not be empty)
@@ -32,4 +35,7 @@ pub struct Config {
 
     /// Connection information about the client-facing side.
     pub client_connection: ConnectionConfig,
+
+    /// Config for the plugins
+    pub plugins: Vec<PluginConfig>,
 }
