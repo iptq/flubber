@@ -1,0 +1,8 @@
+[package]
+name = "daemon"
+version = "0.1.0"
+authors = ["Michael Zhang <iptq@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+flubber = { path = "../" }
