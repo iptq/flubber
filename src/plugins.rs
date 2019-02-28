@@ -7,17 +7,16 @@ use futures::{
     sync::oneshot::{Receiver as OneshotReceiver, Sender as OneshotSender},
     Poll,
 };
-use serde_cbor::Value;
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_process::{Child, ChildStdin, ChildStdout, CommandExt};
 
-use crate::message::Origin;
+use crate::proto::plugin::PacketId;
 
 pub struct Plugin {
     child: Child,
     stdin: ChildStdin,
     stdout: ChildStdout,
-    pending_messages: HashMap<Origin, OneshotReceiver<Value>>,
+    pending_messages: HashMap<(), OneshotReceiver<()>>,
 }
 
 impl Plugin {

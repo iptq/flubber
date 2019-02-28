@@ -1,6 +1,7 @@
 use std::error::Error as StdError;
 
 use backtrace::Backtrace;
+use tokio::sync::mpsc::error::UnboundedRecvError;
 
 pub trait ErrorExt: StdError {
     fn reason(&self) -> Option<&(dyn ErrorExt + 'static)> {
@@ -15,14 +16,17 @@ pub trait ErrorExt: StdError {
 
 #[derive(Clone, Debug, Display, From)]
 pub enum ErrorKind {
-    #[display(fmt = "cbor error")]
-    Cbor,
-
     #[display(fmt = "io error")]
     Io,
 
+    #[display(fmt = "mpsc error")]
+    Mpsc,
+
     #[display(fmt = "encoding error")]
-    EncodingError,
+    Encoding,
+
+    #[display(fmt = "decoding error")]
+    Decoding,
 }
 
 #[derive(Debug, Display)]
@@ -46,6 +50,16 @@ impl ErrorExt for Error {
 }
 
 impl Error {
+    /// With kind
+    pub fn with_kind(kind: ErrorKind) -> Self {
+        let backtrace = Some(Backtrace::new());
+        Error {
+            kind,
+            backtrace,
+            cause: None,
+        }
+    }
+
     /// Chains an error with a cause
     pub fn with_cause<E>(kind: ErrorKind, cause: E) -> Self
     where
@@ -55,7 +69,7 @@ impl Error {
             Some(backtrace) => backtrace.clone(),
             None => Backtrace::new(),
         });
-        let cause: Option<Box<dyn ErrorExt + Send + Sync + 'static>> = Some(Box::new(cause));
+        let cause: Option<Box<(dyn ErrorExt + Sync + Send + 'static)>> = Some(Box::new(cause));
         Error {
             kind,
             backtrace,
@@ -67,8 +81,8 @@ impl Error {
 macro_rules! impl_error_type {
     ($ty:path, $kind:ident) => {
         impl From<$ty> for Error {
-            fn from(error: $ty) -> Self {
-                Self::with_cause(ErrorKind::$kind, error)
+            fn from(err: $ty) -> Self {
+                Self::with_cause(ErrorKind::$kind, err)
             }
         }
 
@@ -85,4 +99,13 @@ macro_rules! impl_error_type {
 }
 
 impl_error_type!(::std::io::Error, Io);
-impl_error_type!(::serde_cbor::error::Error, Cbor);
+impl_error_type!(::prost::EncodeError, Encoding);
+impl_error_type!(::prost::DecodeError, Decoding);
+
+// other impls
+
+impl From<UnboundedRecvError> for Error {
+    fn from(err: UnboundedRecvError) -> Self {
+        Self::with_kind(ErrorKind::Mpsc)
+    }
+}

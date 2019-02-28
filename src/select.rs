@@ -1,6 +1,6 @@
-use std::collections::{HashSet, hash_set::Iter as HashSetIter};
+use std::collections::{hash_set::Iter as HashSetIter, HashSet};
 
-use futures::{Stream, Poll, Async};
+use futures::{Async, Poll, Stream};
 
 use crate::errors::Error;
 
@@ -15,7 +15,7 @@ impl<T> Stream for SelectSet<T> {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-    	// TODO:
-    	Ok(Async::NotReady)
+        // TODO:
+        Ok(Async::NotReady)
     }
 }

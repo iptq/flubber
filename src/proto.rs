@@ -1,36 +1,38 @@
-use bytes::BytesMut;
+pub mod plugin {
+    include!(concat!(env!("OUT_DIR"), "/flubber.plugin.rs"));
+}
+
+use std::io::Cursor;
+use std::marker::PhantomData;
+
+use bytes::{Bytes, BytesMut, IntoBuf};
+use prost::Message;
 use tokio_codec::{Decoder, Encoder};
 
+pub use self::plugin::Packet;
 use crate::errors::{Error, ErrorKind};
-use crate::message::PluginMessage;
 
 #[derive(Default)]
 pub struct PluginCodec;
 
-impl PluginCodec {
-    pub fn new() -> Self {
-        PluginCodec
-    }
-}
-
 impl Encoder for PluginCodec {
-    type Item = PluginMessage;
+    type Item = Packet;
     type Error = Error;
 
     fn encode(&mut self, item: Self::Item, bytes: &mut BytesMut) -> Result<(), Self::Error> {
-        serde_cbor::to_vec(&item)
-            .map(|vec| bytes.extend_from_slice(vec.as_slice()))
-            .map_err(|err| Error::with_cause(ErrorKind::EncodingError, err))
+        item.encode(bytes)
+            .map_err(|err| Error::with_cause(ErrorKind::Encoding, err))
     }
 }
 
 impl Decoder for PluginCodec {
-    type Item = PluginMessage;
+    type Item = Packet;
     type Error = Error;
 
     fn decode(&mut self, bytes: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        serde_cbor::from_slice(bytes)
+        let bytes = bytes.clone().freeze();
+        Packet::decode(bytes)
             .map(Option::Some)
-            .map_err(|err| Error::with_cause(ErrorKind::EncodingError, err))
+            .map_err(|err| Error::with_cause(ErrorKind::Encoding, err))
     }
 }
