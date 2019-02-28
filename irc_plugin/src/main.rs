@@ -4,6 +4,7 @@ use flubber::{
 };
 use futures::{future, sync::mpsc, Future, Stream};
 use irc::client::prelude::{Client, ClientExt, Command, Config, IrcClient};
+use lazy_static::lazy_static;
 use tokio::{
     io::{stdin, stdout},
     runtime::Runtime,
@@ -21,6 +22,7 @@ fn irc_future(to_flubber: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (
     };
 
     let client = IrcClient::from_config(config).unwrap();
+    let mut sequence = 0;
     client.identify().unwrap();
     client
         .stream()
@@ -33,11 +35,11 @@ fn irc_future(to_flubber: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (
                     contents: contents,
                 };
                 let kind = Kind::PluginNewMessage(new_message);
+                sequence = sequence + 1;
                 let packet = Packet {
-                    // TODO: do this
                     id: PacketId {
-                        origin: 0,
-                        sequence: 0,
+                        origin: 1,
+                        sequence,
                     },
                     kind: Some(kind),
                 };
