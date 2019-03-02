@@ -36,7 +36,7 @@ impl<K: Clone + Eq + Hash, S: Stream> SelectSet<K, S> {
         SelectSet::default()
     }
 
-    pub fn add(&mut self, key: K, stream: S) -> Option<S> {
+    pub fn insert(&mut self, key: K, stream: S) -> Option<S> {
         if let Some(prev) = self.streams.insert(key.clone(), stream) {
             Some(prev)
         } else {
@@ -75,16 +75,16 @@ impl<K: Clone + Eq + Hash, S: Stream> Stream for SelectSet<K, S> {
         }
 
         self.current = (self.current + 1) % self.keys.len();
-        let r = self
+        let result = self
             .streams
             .get_mut(&self.keys[self.current])
             .unwrap()
             .poll();
 
-        if let Ok(Async::Ready(None)) = r {
+        if let Ok(Async::Ready(None)) = result {
             let key = self.keys[self.current].clone();
             self.remove(&key);
         }
-        r
+        result
     }
 }

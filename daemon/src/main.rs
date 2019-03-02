@@ -1,6 +1,6 @@
 // TODO: unhardcode this
 
-use flubber::Daemon;
+use flubber::{Daemon, ErrorExt};
 use futures::Future;
 use tokio::runtime::Runtime;
 
@@ -10,6 +10,9 @@ fn main() {
     daemon
         .add_plugin("/home/michael/Projects/flubber/target/debug/irc_plugin")
         .unwrap();
-    runtime.spawn(daemon.start().map_err(|_| ()));
+    runtime.spawn(daemon.start().map_err(|err| {
+        eprintln!("daemon error: {}", err);
+        eprintln!("{:?}", err.backtrace())
+    }));
     runtime.shutdown_on_idle().wait().unwrap();
 }

@@ -9,9 +9,12 @@ use tokio::{
     io::{stdin, stdout},
     runtime::Runtime,
 };
-use tokio_codec::FramedWrite;
+use tokio_codec::{FramedRead, FramedWrite};
 
-fn irc_future(to_flubber: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (), Error = ()> {
+fn irc_future(
+    to_flubber: mpsc::UnboundedSender<Packet>,
+    from_flubber: mpsc::UnboundedReceiver<Packet>,
+) -> impl Future<Item = (), Error = ()> {
     let config = Config {
         server: Some("acm.umn.edu".to_owned()),
         nickname: Some("flubber".to_owned()),
@@ -24,7 +27,7 @@ fn irc_future(to_flubber: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (
     let client = IrcClient::from_config(config).unwrap();
     let mut sequence = 0;
     client.identify().unwrap();
-    client
+    let a = client
         .stream()
         .for_each(move |message| {
             use flubber::proto::plugin::{packet::Kind, PacketId, PluginNewMessage};
@@ -43,17 +46,34 @@ fn irc_future(to_flubber: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (
                     },
                     kind: Some(kind),
                 };
-                to_flubber.send(packet);
+                // TODO: don't unwrap
+                to_flubber.send(packet).unwrap();
             }
             future::ok(())
         })
-        .map(|_| ())
-        .map_err(|_| ())
+        .map_err(|err| {
+            eprintln!("error: {}", err);
+        });
+    let b = from_flubber.for_each(|packet| {
+        use flubber::proto::plugin::{packet::Kind, PacketId, PluginNewMessage};
+        match packet.kind {
+            _ => (),
+        }
+        future::ok(())
+    });
+    a.join(b).map(|_| ())
 }
 
-fn stdin_future() -> impl Future<Item = (), Error = ()> {
+fn stdin_future(tx: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (), Error = ()> {
+    let codec = PluginCodec::default();
     let stdin = stdin();
-    future::ok::<_, ()>(())
+    let framed_read = FramedRead::new(stdin, codec);
+    framed_read
+        .for_each(|_| future::ok(()))
+        .map(|_| ())
+        .map_err(|err| {
+            eprintln!("error: {}", err);
+        })
 }
 
 fn stdout_future(rx: mpsc::UnboundedReceiver<Packet>) -> impl Future<Item = (), Error = ()> {
@@ -63,14 +83,17 @@ fn stdout_future(rx: mpsc::UnboundedReceiver<Packet>) -> impl Future<Item = (), 
     rx.map_err(|_| Error::with_kind(ErrorKind::Io))
         .forward(FramedWrite::new(stdout, codec))
         .map(|_| ())
-        .map_err(|_| ())
+        .map_err(|err| {
+            eprintln!("error: {}", err);
+        })
 }
 
 fn main() {
     let mut runtime = Runtime::new().unwrap();
-    let (tx, rx) = mpsc::unbounded();
-    runtime.spawn(stdout_future(rx));
-    runtime.spawn(irc_future(tx));
-    runtime.spawn(stdin_future());
+    let (to_flubber_tx, to_flubber_rx) = mpsc::unbounded();
+    let (from_flubber_tx, from_flubber_rx) = mpsc::unbounded();
+    runtime.spawn(stdout_future(to_flubber_rx));
+    runtime.spawn(irc_future(to_flubber_tx, from_flubber_rx));
+    runtime.spawn(stdin_future(from_flubber_tx));
     runtime.shutdown_on_idle().wait().unwrap();
 }

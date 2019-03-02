@@ -21,6 +21,7 @@ struct PluginInner {
     pub stdin: ChildStdin,
     pub stdout: ChildStdout,
     pub pending_messages: HashMap<(), OneshotReceiver<()>>,
+    pub sequence: i32,
 }
 
 #[derive(Clone)]
@@ -40,6 +41,7 @@ impl Plugin {
             stdin,
             stdout,
             pending_messages,
+            sequence: 0,
         }))))
     }
 }

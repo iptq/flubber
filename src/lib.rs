@@ -13,5 +13,5 @@ pub mod proto;
 mod select;
 
 pub use daemon::Daemon;
-pub use errors::{Error, ErrorKind};
+pub use errors::{Error, ErrorExt, ErrorKind};
 pub use proto::{Packet, PluginCodec};
