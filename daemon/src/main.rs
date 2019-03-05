@@ -10,9 +10,11 @@ fn main() {
     daemon
         .add_plugin("/home/michael/Projects/flubber/target/debug/irc_plugin")
         .unwrap();
+
     runtime.spawn(daemon.run().map_err(|err| {
         eprintln!("daemon error: {}", err);
         eprintln!("{:?}", err.backtrace())
     }));
+
     runtime.shutdown_on_idle().wait().unwrap();
 }
