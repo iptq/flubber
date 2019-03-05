@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package flubber.common;
 
+import "client.proto";
 import "plugin.proto";
 
 enum Origin {
@@ -21,5 +22,6 @@ message Packet {
 	oneof kind {
 		flubber.plugin.PluginInit plugin_init = 2;
 		flubber.plugin.PluginIncomingMessage plugin_incoming_message = 3;
+		flubber.client.ServerIncomingMessage server_incoming_message = 4;
 	}
 }

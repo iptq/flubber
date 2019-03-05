@@ -5,8 +5,8 @@ extern crate relm_derive;
 
 use flubber::{Client, ErrorExt, Packet};
 use futures::{future, sync::mpsc, Future};
-use gtk::prelude::*;
-use relm::Widget;
+use gtk::{prelude::* , Orientation::*};
+use relm::{Widget, Relm};
 use relm_attributes::widget;
 use tokio::runtime::Runtime;
 
@@ -15,13 +15,18 @@ pub enum Message {
     Quit,
 }
 
-#[derive(Default)]
-pub struct Model {}
+pub struct Model {
+    relm: Relm<MainWin>,
+    buffer: gtk::TextBuffer,
+}
 
 #[widget]
 impl Widget for MainWin {
-    fn model(from_flubber: mpsc::UnboundedReceiver<Packet>) -> Model {
-        Model::default()
+    fn model(relm: &Relm<Self>, from_flubber: mpsc::UnboundedReceiver<Packet>) -> Model {
+        Model {
+            relm: relm.clone(),
+            buffer: gtk::TextBuffer::new(None),
+        }
     }
 
     fn update(&mut self, evt: Message) {
@@ -33,8 +38,28 @@ impl Widget for MainWin {
     view! {
         gtk::Window {
             title: "flubber",
-            gtk::TextView {},
+            property_default_width: 854,
+            property_default_height: 480,
+            resizable: false,
+
             delete_event(_, _) => (Message::Quit, Inhibit(false)),
+
+            gtk::Box {
+                orientation: Vertical,
+
+                gtk::ScrolledWindow {
+                    gtk::TextView {
+                        vexpand: true,
+                        editable: false,
+                        cursor_visible: false,
+                        monospace: true,
+                        buffer: Some(&self.model.buffer),
+                    },
+                },
+                gtk::Entry {
+                    placeholder_text: "type message",
+                },
+            },
         }
     }
 }
