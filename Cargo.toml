@@ -6,7 +6,7 @@ edition = "2018"
 build = "src/build.rs"
 
 [workspace]
-members = [".", "daemon", "irc_plugin"]
+members = [".", "client", "daemon", "irc_plugin"]
 
 [dependencies]
 backtrace = "0.3"

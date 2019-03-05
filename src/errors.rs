@@ -1,7 +1,10 @@
 use std::error::Error as StdError;
 
 use backtrace::Backtrace;
+use futures::sync::mpsc::SendError;
 use tokio::sync::mpsc::error::UnboundedRecvError;
+
+use crate::proto::plugin::Packet;
 
 pub trait ErrorExt: StdError {
     fn reason(&self) -> Option<&(dyn ErrorExt + 'static)> {
@@ -106,6 +109,12 @@ impl_error_type!(::prost::DecodeError, Decoding);
 
 impl From<UnboundedRecvError> for Error {
     fn from(err: UnboundedRecvError) -> Self {
+        Self::with_kind(ErrorKind::Mpsc)
+    }
+}
+
+impl From<SendError<Packet>> for Error {
+    fn from(err: SendError<Packet>) -> Self {
         Self::with_kind(ErrorKind::Mpsc)
     }
 }

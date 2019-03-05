@@ -47,7 +47,7 @@ fn irc_future(
                     kind: Some(kind),
                 };
                 // TODO: don't unwrap
-                to_flubber.send(packet).unwrap();
+                to_flubber.unbounded_send(packet).unwrap();
             }
             future::ok(())
         })
@@ -68,12 +68,7 @@ fn stdin_future(tx: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (), Err
     let codec = PluginCodec::default();
     let stdin = stdin();
     let framed_read = FramedRead::new(stdin, codec);
-    framed_read
-        .for_each(|_| future::ok(()))
-        .map(|_| ())
-        .map_err(|err| {
-            eprintln!("error: {}", err);
-        })
+    framed_read.forward(tx).map(|_| ()).map_err(|_| ())
 }
 
 fn stdout_future(rx: mpsc::UnboundedReceiver<Packet>) -> impl Future<Item = (), Error = ()> {
