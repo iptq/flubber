@@ -30,14 +30,14 @@ fn irc_future(
     let a = client
         .stream()
         .for_each(move |message| {
-            use flubber::proto::plugin::{packet::Kind, PacketId, PluginNewMessage};
+            use flubber::proto::plugin::{packet::Kind, PacketId, PluginIncomingMessage};
             if let Command::PRIVMSG(target, contents) = message.command {
-                let new_message = PluginNewMessage {
+                let new_message = PluginIncomingMessage {
                     timestamp: 0,
                     author: message.prefix.unwrap(),
                     contents: contents,
                 };
-                let kind = Kind::PluginNewMessage(new_message);
+                let kind = Kind::PluginIncomingMessage(new_message);
                 sequence = sequence + 1;
                 let packet = Packet {
                     id: PacketId {
@@ -55,7 +55,7 @@ fn irc_future(
             eprintln!("error: {}", err);
         });
     let b = from_flubber.for_each(|packet| {
-        use flubber::proto::plugin::{packet::Kind, PacketId, PluginNewMessage};
+        use flubber::proto::plugin::{packet::Kind, PacketId, PluginIncomingMessage};
         match packet.kind {
             _ => (),
         }

@@ -31,7 +31,7 @@ impl Daemon {
         Ok(())
     }
 
-    pub fn start(self) -> impl Future<Item = (), Error = Error> {
+    pub fn run(self) -> impl Future<Item = (), Error = Error> {
         println!("{:?}", self.plugins.len());
         self.reader.for_each(|packet| {
             println!("packet: {:?}", packet);
