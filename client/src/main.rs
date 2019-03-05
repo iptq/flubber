@@ -3,8 +3,8 @@ extern crate relm;
 #[macro_use]
 extern crate relm_derive;
 
-use flubber::{Client, ErrorExt};
-use futures::{Future, future};
+use flubber::{Client, ErrorExt, Packet};
+use futures::{future, sync::mpsc, Future};
 use gtk::prelude::*;
 use relm::Widget;
 use relm_attributes::widget;
@@ -20,7 +20,7 @@ pub struct Model {}
 
 #[widget]
 impl Widget for MainWin {
-    fn model() -> Model {
+    fn model(from_flubber: mpsc::UnboundedReceiver<Packet>) -> Model {
         Model::default()
     }
 
@@ -39,16 +39,17 @@ impl Widget for MainWin {
     }
 }
 
-fn run() -> impl Future<Item = (), Error = ()> {
-    future::result(MainWin::run(()))
+fn run(from_flubber: mpsc::UnboundedReceiver<Packet>) -> impl Future<Item = (), Error = ()> {
+    future::result(MainWin::run(from_flubber))
 }
 
 fn main() {
     let mut runtime = Runtime::new().unwrap();
+    let (from_flubber_tx, from_flubber_rx) = mpsc::unbounded();
     let client = Client::new();
-    runtime.spawn(run());
+    runtime.spawn(run(from_flubber_rx));
     runtime.spawn(client.run().map_err(|err| {
-        eprintln!("daemon error: {}", err);
+        eprintln!("client error: {}", err);
         eprintln!("{:?}", err.backtrace())
     }));
     runtime.shutdown_on_idle().wait().unwrap();

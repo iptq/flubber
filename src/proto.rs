@@ -1,3 +1,9 @@
+pub mod client {
+    include!(concat!(env!("OUT_DIR"), "/flubber.client.rs"));
+}
+pub mod common {
+    include!(concat!(env!("OUT_DIR"), "/flubber.common.rs"));
+}
 pub mod plugin {
     include!(concat!(env!("OUT_DIR"), "/flubber.plugin.rs"));
 }
@@ -9,8 +15,10 @@ use bytes::{Bytes, BytesMut, IntoBuf};
 use prost::Message;
 use tokio_codec::{Decoder, Encoder};
 
-pub use self::plugin::Packet;
 use crate::errors::{Error, ErrorKind};
+
+pub use self::common::packet;
+pub use self::common::{Origin, Packet, PacketId};
 
 #[derive(Default)]
 pub struct PluginCodec;

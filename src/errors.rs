@@ -4,7 +4,7 @@ use backtrace::Backtrace;
 use futures::sync::mpsc::SendError;
 use tokio::sync::mpsc::error::UnboundedRecvError;
 
-use crate::proto::plugin::Packet;
+use crate::Packet;
 
 pub trait ErrorExt: StdError {
     fn reason(&self) -> Option<&(dyn ErrorExt + 'static)> {

@@ -12,7 +12,7 @@ use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_process::{Child, ChildStdin, ChildStdout, CommandExt};
 use tower_service::Service;
 
-use crate::proto::plugin::PacketId;
+use crate::proto::common::PacketId;
 use crate::proto::Packet;
 use crate::Error;
 

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package flubber.common;
+
+import "plugin.proto";
+
+enum Origin {
+	Server = 0;
+	Plugin = 1;
+	Client = 2;
+}
+
+message PacketId {
+	Origin origin = 1;
+	uint32 sequence = 2;
+}
+
+message Packet {
+	PacketId id = 1;
+
+	oneof kind {
+		flubber.plugin.PluginInit plugin_init = 2;
+		flubber.plugin.PluginIncomingMessage plugin_incoming_message = 3;
+	}
+}

@@ -1,5 +1,5 @@
 use flubber::{
-    proto::{plugin::Packet, PluginCodec},
+    proto::{Packet, PluginCodec},
     Error, ErrorKind,
 };
 use futures::{future, sync::mpsc, Future, Stream};
@@ -30,20 +30,24 @@ fn irc_future(
     let a = client
         .stream()
         .for_each(move |message| {
-            use flubber::proto::plugin::{packet::Kind, PacketId, PluginIncomingMessage};
+            use flubber::proto::{packet::Kind, plugin::PluginIncomingMessage, PacketId};
+            use std::time::{SystemTime, UNIX_EPOCH};
             if let Command::PRIVMSG(target, contents) = message.command {
                 let new_message = PluginIncomingMessage {
-                    timestamp: 0,
+                    timestamp: SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("time went backwards")
+                        .as_millis() as u64,
                     author: message.prefix.unwrap(),
                     contents: contents,
                 };
                 let kind = Kind::PluginIncomingMessage(new_message);
                 sequence = sequence + 1;
                 let packet = Packet {
-                    id: PacketId {
+                    id: Some(PacketId {
                         origin: 1,
                         sequence,
-                    },
+                    }),
                     kind: Some(kind),
                 };
                 // TODO: don't unwrap
@@ -55,7 +59,7 @@ fn irc_future(
             eprintln!("error: {}", err);
         });
     let b = from_flubber.for_each(|packet| {
-        use flubber::proto::plugin::{packet::Kind, PacketId, PluginIncomingMessage};
+        use flubber::proto::{packet::Kind, plugin::PluginIncomingMessage, PacketId};
         match packet.kind {
             _ => (),
         }

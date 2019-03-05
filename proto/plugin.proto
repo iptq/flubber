@@ -1,32 +1,13 @@
-syntax = "proto2";
+syntax = "proto3";
 
 package flubber.plugin;
 
-enum Origin {
-	Server = 0;
-	Plugin = 1;
-}
-
-message PacketId {
-	required Origin origin = 1;
-	required uint32 sequence = 2;
-}
-
-message Packet {
-	required PacketId id = 1;
-
-	oneof kind {
-		PluginInit plugin_init = 2;
-		PluginNewMessage plugin_new_message = 3;
-	}
-}
-
 message PluginInit {
-	required uint32 version = 1;
+	uint32 version = 1;
 }
 
-message PluginNewMessage {
-	required uint32 timestamp = 1;
-	required string author = 2;
-	required string contents = 3;
+message PluginIncomingMessage {
+	uint64 timestamp = 1;
+	string author = 2;
+	string contents = 3;
 }
