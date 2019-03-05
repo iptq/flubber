@@ -8,6 +8,7 @@ edition = "2018"
 flubber = { path = ".." }
 futures = "0.1"
 gtk = { version = "0.5", features = ["v3_16"] }
+ref_thread_local = "0.0"
 relm = "0.15"
 relm-attributes = "0.15"
 relm-derive = "0.15"
