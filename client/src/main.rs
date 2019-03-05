@@ -9,8 +9,8 @@ use flubber::{
 };
 use futures::{future, sync::mpsc, Future, Stream};
 use gtk::{prelude::*, Orientation::*};
-use relm::{Component, Relm, Widget};
 use ref_thread_local::{ref_thread_local, RefThreadLocal};
+use relm::{Component, Relm, Widget};
 use relm_attributes::widget;
 use tokio::runtime::Runtime;
 
@@ -99,7 +99,10 @@ impl Widget for MainWin {
     }
 }
 
-struct App(pub Component<MainWin>, pub Option<mpsc::UnboundedReceiver<Packet>>);
+struct App(
+    pub Component<MainWin>,
+    pub Option<mpsc::UnboundedReceiver<Packet>>,
+);
 
 impl App {
     pub fn new() -> Self {
