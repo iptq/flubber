@@ -19,6 +19,9 @@ pub trait ErrorExt: StdError {
 
 #[derive(Clone, Debug, Display, From)]
 pub enum ErrorKind {
+    #[display(fmt = "nothing")]
+    Unit,
+
     #[display(fmt = "io error")]
     Io,
 
@@ -106,6 +109,12 @@ impl_error_type!(::prost::EncodeError, Encoding);
 impl_error_type!(::prost::DecodeError, Decoding);
 
 // other impls
+
+impl From<()> for Error {
+    fn from(err: ()) -> Self {
+        Self::with_kind(ErrorKind::Unit)
+    }
+}
 
 impl From<UnboundedRecvError> for Error {
     fn from(err: UnboundedRecvError) -> Self {

@@ -1,5 +1,5 @@
 use flubber::{
-    proto::{Packet, PluginCodec},
+    proto::{Codec, Packet},
     Error, ErrorKind,
 };
 use futures::{future, sync::mpsc, Future, Stream};
@@ -69,14 +69,14 @@ fn irc_future(
 }
 
 fn stdin_future(tx: mpsc::UnboundedSender<Packet>) -> impl Future<Item = (), Error = ()> {
-    let codec = PluginCodec::default();
+    let codec = Codec::<Packet>::new();
     let stdin = stdin();
     let framed_read = FramedRead::new(stdin, codec);
     framed_read.forward(tx).map(|_| ()).map_err(|_| ())
 }
 
 fn stdout_future(rx: mpsc::UnboundedReceiver<Packet>) -> impl Future<Item = (), Error = ()> {
-    let codec = PluginCodec::default();
+    let codec = Codec::<Packet>::new();
     let stdout = stdout();
     // TODO: what the fuck?
     rx.map_err(|_| Error::with_kind(ErrorKind::Io))

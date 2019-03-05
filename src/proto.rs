@@ -20,11 +20,16 @@ use crate::errors::{Error, ErrorKind};
 pub use self::common::packet;
 pub use self::common::{Origin, Packet, PacketId};
 
-#[derive(Default)]
-pub struct PluginCodec;
+pub struct Codec<T>(PhantomData<T>);
 
-impl Encoder for PluginCodec {
-    type Item = Packet;
+impl<T> Codec<T> {
+    pub fn new() -> Self {
+        Codec(PhantomData::default())
+    }
+}
+
+impl<T: Message> Encoder for Codec<T> {
+    type Item = T;
     type Error = Error;
 
     fn encode(&mut self, item: Self::Item, bytes: &mut BytesMut) -> Result<(), Self::Error> {
@@ -33,13 +38,13 @@ impl Encoder for PluginCodec {
     }
 }
 
-impl Decoder for PluginCodec {
-    type Item = Packet;
+impl<T: Default + Message> Decoder for Codec<T> {
+    type Item = T;
     type Error = Error;
 
     fn decode(&mut self, bytes: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         let bytes = bytes.clone().freeze();
-        Packet::decode(bytes)
+        T::decode(bytes)
             .map(Option::Some)
             .map_err(|err| Error::with_cause(ErrorKind::Encoding, err))
     }

@@ -113,11 +113,13 @@ fn main() {
     let mut runtime = Runtime::new().unwrap();
     let (to_flubber_tx, to_flubber_rx) = mpsc::unbounded();
     let (from_flubber_tx, from_flubber_rx) = mpsc::unbounded();
-    let client = Client::new();
+    let client = Client::new(to_flubber_rx, from_flubber_tx);
+
     runtime.spawn(run(to_flubber_tx, from_flubber_rx));
     runtime.spawn(client.run().map_err(|err| {
         eprintln!("client error: {}", err);
-        eprintln!("{:?}", err.backtrace())
+        eprintln!("{:?}", err.backtrace());
     }));
+
     runtime.shutdown_on_idle().wait().unwrap();
 }

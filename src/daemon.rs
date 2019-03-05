@@ -12,7 +12,7 @@ use tokio_codec::{Decoder, Framed};
 
 use crate::errors::Error;
 use crate::plugins::Plugin;
-use crate::proto::PluginCodec;
+use crate::proto::{Codec, Packet};
 use crate::select::SelectSet;
 
 fn consume_stream<F, S, R>(stream: S, f: F) -> Box<Future<Item = (), Error = Error> + Send + Sync>
@@ -33,7 +33,7 @@ where
 
 pub struct Daemon {
     plugins: Vec<Plugin>,
-    reader: SelectSet<i32, SplitStream<Framed<Plugin, PluginCodec>>>,
+    reader: SelectSet<i32, SplitStream<Framed<Plugin, Codec<Packet>>>>,
 }
 
 impl Daemon {
@@ -45,7 +45,7 @@ impl Daemon {
     }
 
     pub fn add_plugin(&mut self, path: impl AsRef<Path>) -> Result<(), Error> {
-        let codec = PluginCodec::default();
+        let codec = Codec::<Packet>::new();
         let plugin = Plugin::new(path)?;
         let framed = codec.framed(plugin.clone());
         let (framed_write, framed_read) = framed.split();
@@ -61,7 +61,7 @@ impl Daemon {
                 .incoming()
                 .map_err(Error::from),
             |client| {
-                let codec = PluginCodec::default();
+                let codec = Codec::<Packet>::new();
                 let framed = codec.framed(client);
                 let (framed_write, framed_read) = framed.split();
                 framed_read.for_each(|packet| {

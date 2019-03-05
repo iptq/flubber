@@ -16,4 +16,4 @@ mod select;
 pub use client::Client;
 pub use daemon::Daemon;
 pub use errors::{Error, ErrorExt, ErrorKind};
-pub use proto::{Packet, PluginCodec};
+pub use proto::{Codec, Packet};
