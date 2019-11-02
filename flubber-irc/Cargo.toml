@@ -1,0 +1,10 @@
+[package]
+name = "flubber-irc"
+version = "0.1.0"
+authors = ["Michael Zhang <iptq@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+irc = "0.13"
+flubber = { path = ".." }
+serde_json = "1.0"
